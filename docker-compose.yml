@@ -1,0 +1,5 @@
+services:
+  ibm:
+    build: 
+      dockerfile: ./dockerfile
+      context: .
