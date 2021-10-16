@@ -23,17 +23,42 @@ class API:
         self.reconnect()
         self._rates_thread = threading.Thread(target=self._rates_worker)
         self._rates_thread.start()
+        self.pre_rate_change_hooks.append(self.grzonzo_trader)
         self.pre_rate_change_hooks.append(self.test_worker)
-        self.after_rate_change_hooks.append(self.test_worker)
         #print(self.get_rates())
         #print(self.get_team())
         #transaction = self.transaction("usd", 69, "ETH")
         #print(transaction)
         #breakpoint()
         #print(self.confirm_transaction(transaction["entity"]["transactionID"]))
+        self.did_i_buy_100k_dollars_worth_of_bitcoin = False
+        self.how_much_bitcoin_do_i_have = 0
     
     def test_worker(self):
-        print(self.realprice['bitcoin']['usd'], self.rates[0]['rate'])
+        print("\t==", self.realprice, self.rates[1]['rate'])
+
+    def grzonzo_trader(self):
+        roundedDiffrenceETH = round(self.rates[3]["rate"], 6) * self.rates[1]["rate"]
+        realprice = self.realprice
+        ibm_price = self.rates[1]['rate']
+        if realprice > ibm_price:
+            #buy
+            if (not self.did_i_buy_100k_dollars_worth_of_bitcoin and realprice + .1 >= ibm_price 
+                    and roundedDiffrenceETH > 1):
+                print("===bought some tendies")
+                self.did_i_buy_100k_dollars_worth_of_bitcoin = True
+                money = self.transaction('usd', 100000, 'eth')
+                self.how_much_bitcoin_do_i_have = money['entity']['boughtAmount']
+                self.confirm_transaction(money['entity']['transactionID'])
+        else:
+            #sell
+            if self.did_i_buy_100k_dollars_worth_of_bitcoin:
+                print("===dumping tendies")
+                self.did_i_buy_100k_dollars_worth_of_bitcoin = False
+                money = self.transaction('eth', self.how_much_bitcoin_do_i_have, 'usd')
+                self.how_much_bitcoin_do_i_have = 0
+                print("===profit:", 100000 - float(money['entity']['boughtAmount']))
+                self.confirm_transaction(money['entity']['transactionID'])
 
     def reconnect(self):
         try:
@@ -91,10 +116,9 @@ class API:
         return self.session.post(
                 "https://platform.cryptobrawl.pl/api/transactions/{}".format(transaction_id),
                 verify=False
-            ).json()
+            )
 
     def run_hooks(self, hooks):
-        self.realprice = cg.get_price(ids="bitcoin", vs_currencies="usd")
         for hook in hooks:
             hook()
 
@@ -107,16 +131,19 @@ class API:
                 update_again_at = datetime.datetime.fromtimestamp(rates["metadata"]["expiresAt"])
                 if not self._allow_threads:
                     break
-                print("after rate hooks", flush=True)
+                time_left = update_again_at - datetime.datetime.now()
+                print("after rate hooks", time_left, flush=True)
                 hook_thread = threading.Thread(target=self.run_hooks, args=(self.after_rate_change_hooks,))
                 hook_thread.start()
                 time_left = update_again_at - datetime.datetime.now()
-                sleep(time_left.total_seconds() / 2 + 1)
+                sleep(time_left.total_seconds() / 1.3 + 1)
 
                 hook_thread.join()
                 if not self._allow_threads:
                     break
-                print("pre rate hooks", flush=True)
+                time_left = update_again_at - datetime.datetime.now()
+                print("pre rate hooks", time_left, flush=True)
+                self.realprice = cg.get_price(ids="ethereum", vs_currencies="usd")['ethereum']['usd']
                 hook_thread = threading.Thread(target=self.run_hooks, args=(self.pre_rate_change_hooks,))
                 hook_thread.start()
                 time_left = update_again_at - datetime.datetime.now()
