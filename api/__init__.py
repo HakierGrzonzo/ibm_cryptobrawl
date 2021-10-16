@@ -1,6 +1,6 @@
 from requests import Session
 from selenium import webdriver
-from .coingecko import cg
+#from .coingecko import cg
 import datetime
 import threading
 import json
@@ -23,7 +23,7 @@ class API:
         self.reconnect()
         self._rates_thread = threading.Thread(target=self._rates_worker)
         self._rates_thread.start()
-        self.pre_rate_change_hooks.append(self.test_worker)
+       # self.pre_rate_change_hooks.append(self.test_worker)
         self.after_rate_change_hooks.append(self.earn_from_rounding)
         #Diffrent after_rate_change_hooksbetween actually value and calculated by IBM
         self.roundedDiffrenceETH = 0.0
@@ -42,21 +42,22 @@ class API:
     def earn_from_rounding(self):
         self.roundedDiffrenceETH = round(self.rates[3]["rate"], 6) * self.rates[1]["rate"]
         self.roundedDiffrenceBTC = round(self.rates[2]["rate"], 6) * self.rates[0]["rate"]
+        how_much_to_buy = 213700
         print(self.rates)
         print(self.roundedDiffrenceETH)
         if(self.roundedDiffrenceETH>1.0008):
             print("start ETH treade because rate is: ", self.roundedDiffrenceETH)
-            transaction = self.transaction("usd", 100001, "ETH")
+            transaction = self.transaction("usd", how_much_to_buy, "ETH")
             self.confirm_transaction(transaction["entity"]["transactionID"])
             sleep(7)
-            transaction = self.transaction("ETH", round(round(self.rates[3]["rate"], 6) * 100001, 6), "usd")
+            transaction = self.transaction("ETH", round(round(self.rates[3]["rate"], 6) * how_much_to_buy, 6), "usd")
             self.confirm_transaction(transaction["entity"]["transactionID"])
         if(self.roundedDiffrenceBTC>1.0008):
             print("start BTC treade because rate is: ", self.roundedDiffrenceBTC)
-            transaction = self.transaction("usd", 100001, "BTC")
+            transaction = self.transaction("usd", how_much_to_buy, "BTC")
             self.confirm_transaction(transaction["entity"]["transactionID"])
             sleep(7)
-            transaction = self.transaction("BTC", round(round(self.rates[2]["rate"], 6) * 100001, 6), "usd")
+            transaction = self.transaction("BTC", round(round(self.rates[2]["rate"], 6) * how_much_to_buy, 6), "usd")
             self.confirm_transaction(transaction["entity"]["transactionID"])
 
 
@@ -69,11 +70,13 @@ class API:
                     self.session.cookies[k] = v
                 if self.session.get("https://platform.cryptobrawl.pl/api/rates", verify=False).status_code == 200:
                     print("Got cached!")
-                    return
+                    #return
         except:
-                pass
+            pass
         print("Reconnecting!")
-        driver = webdriver.Chrome()
+        options = webdriver.FirefoxOptions()
+        options.headless = True
+        driver = webdriver.Firefox(options=options)
         driver.get("https://platform.cryptobrawl.pl/ui/home")
         sleep(2)
         driver.find_element_by_xpath("/html/body/div[1]/div/main/div/div[2]/div/button").click()
@@ -90,23 +93,6 @@ class API:
         driver.close()
         with open(".cookie", "w+") as f:
             json.dump(cookie_json, f)
-        print("I'm in!")
-        print("Reconnecting!")
-        #driverOpts = webdriver.Chrome()
-        #driverOpts.headless = True
-        driver = webdriver.Chrome()
-        driver.get("https://platform.cryptobrawl.pl/ui/home")
-        sleep(2)
-        driver.find_element_by_xpath("/html/body/div[1]/div/main/div/div[2]/div/button").click()
-        sleep(2)
-        print("Logging in!")
-        driver.find_element_by_id("email").send_keys(self._username)
-        driver.find_element_by_id("password").send_keys(self._password)
-        driver.find_element_by_id("cd_login_button").click()
-        sleep(2)
-        for cookie in driver.get_cookies():
-            self.session.cookies[cookie['name']] = cookie['value']
-        driver.close()
         print("I'm in!")
 
     def get_rates(self):
@@ -136,7 +122,7 @@ class API:
             )
 
     def run_hooks(self, hooks):
-        self.realprice = cg.get_price(ids="bitcoin", vs_currencies="usd")
+        #self.realprice = cg.get_price(ids="bitcoin", vs_currencies="usd")
         for hook in hooks:
             hook()
 
