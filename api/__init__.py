@@ -1,4 +1,5 @@
 from requests import Session
+from .coingecko import cg
 from selenium import webdriver
 import datetime
 import threading
@@ -13,20 +14,26 @@ class API:
         })
         self._username = username
         self._password = password
+        self.pre_rate_change_hooks = []
+        self.after_rate_change_hooks = []
+        self.realprice = None
         # set to False to stop threads
         self._allow_threads = True
         self.rates = None
         self.reconnect()
-
         self._rates_thread = threading.Thread(target=self._rates_worker)
         self._rates_thread.start()
+        self.pre_rate_change_hooks.append(self.test_worker)
+        self.after_rate_change_hooks.append(self.test_worker)
         #print(self.get_rates())
         #print(self.get_team())
         #transaction = self.transaction("usd", 69, "ETH")
         #print(transaction)
         #breakpoint()
         #print(self.confirm_transaction(transaction["entity"]["transactionID"]))
-        
+    
+    def test_worker(self):
+        print(self.realprice['bitcoin']['usd'], self.rates[0]['rate'])
 
     def reconnect(self):
         try:
@@ -38,27 +45,28 @@ class API:
                     print("Got cached!")
                     return
         except:
-            print("Reconnecting!")
-            driverOpts = webdriver.FirefoxOptions()
-            driverOpts.headless = True
-            driver = webdriver.Firefox(options=driverOpts)
-            driver.get("https://platform.cryptobrawl.pl/ui/home")
-            sleep(2)
-            driver.find_element_by_xpath("/html/body/div[1]/div/main/div/div[2]/div/button").click()
-            sleep(2)
-            print("Logging in!")
-            driver.find_element_by_id("email").send_keys(self._username)
-            driver.find_element_by_id("password").send_keys(self._password)
-            driver.find_element_by_id("cd_login_button").click()
-            sleep(2)
-            cookie_json = {}
-            for cookie in driver.get_cookies():
-                cookie_json[cookie['name']] = cookie['value']
-                self.session.cookies[cookie['name']] = cookie['value']
-            driver.close()
-            with open(".cookie", "w+") as f:
-                json.dump(cookie_json, f)
-            print("I'm in!")
+            pass
+        print("Reconnecting!")
+        driverOpts = webdriver.FirefoxOptions()
+        driverOpts.headless = True
+        driver = webdriver.Firefox(options=driverOpts)
+        driver.get("https://platform.cryptobrawl.pl/ui/home")
+        sleep(2)
+        driver.find_element_by_xpath("/html/body/div[1]/div/main/div/div[2]/div/button").click()
+        sleep(2)
+        print("Logging in!")
+        driver.find_element_by_id("email").send_keys(self._username)
+        driver.find_element_by_id("password").send_keys(self._password)
+        driver.find_element_by_id("cd_login_button").click()
+        sleep(2)
+        cookie_json = {}
+        for cookie in driver.get_cookies():
+            cookie_json[cookie['name']] = cookie['value']
+            self.session.cookies[cookie['name']] = cookie['value']
+        driver.close()
+        with open(".cookie", "w+") as f:
+            json.dump(cookie_json, f)
+        print("I'm in!")
 
     def get_rates(self):
         return self.session.get("https://platform.cryptobrawl.pl/api/rates", verify=False).json()
@@ -77,7 +85,6 @@ class API:
                     }
                 },
                 verify=False)
-        print(request.text)
         return request.json()
 
     def confirm_transaction(self, transaction_id: str):
@@ -86,6 +93,11 @@ class API:
                 verify=False
             ).json()
 
+    def run_hooks(self, hooks):
+        self.realprice = cg.get_price(ids="bitcoin", vs_currencies="usd")
+        for hook in hooks:
+            hook()
+
     def _rates_worker(self):
         while self._allow_threads:
             try:
@@ -93,9 +105,23 @@ class API:
                 rates = self.get_rates()
                 self.rates = rates["entity"]
                 update_again_at = datetime.datetime.fromtimestamp(rates["metadata"]["expiresAt"])
+                if not self._allow_threads:
+                    break
+                print("after rate hooks", flush=True)
+                hook_thread = threading.Thread(target=self.run_hooks, args=(self.after_rate_change_hooks,))
+                hook_thread.start()
                 time_left = update_again_at - datetime.datetime.now()
-                print("Waiting", time_left.total_seconds())
-                sleep(time_left.total_seconds() + 2)
+                sleep(time_left.total_seconds() / 2 + 1)
+
+                hook_thread.join()
+                if not self._allow_threads:
+                    break
+                print("pre rate hooks", flush=True)
+                hook_thread = threading.Thread(target=self.run_hooks, args=(self.pre_rate_change_hooks,))
+                hook_thread.start()
+                time_left = update_again_at - datetime.datetime.now()
+                sleep(time_left.total_seconds() + 1)
+                hook_thread.join()
             except Exception as e:
                 print("_rates_worker:", e, flush=True)
                 sleep(10)
