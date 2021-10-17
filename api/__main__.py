@@ -28,6 +28,7 @@ while True:
         try:
             # metoda Kamila
             print(iteration)
+            iteration += 1
             roundedDiffrenceETH = round(rates['entity'][3]["rate"], 6) * rates['entity'][1]["rate"]
             roundedDiffrenceBTC = round(rates['entity'][2]["rate"], 6) * rates['entity'][0]["rate"]
             if roundedDiffrenceETH > 1.0008:
@@ -38,7 +39,7 @@ while True:
                     bought_eth += float(transaction['entity']['boughtAmount'])
                     usd = 0
             elif roundedDiffrenceBTC > 1.0008:
-                print("start ETH trade because rate is:", roundedDiffrenceBTC)
+                print("start BTC trade because rate is:", roundedDiffrenceBTC)
                 transaction = api.transaction('usd', usd, 'btc')
                 if api.confirm_transaction(transaction).status_code == 200:
                     # ibm zwraca hajs jako string w json'ie, WTF!
@@ -56,7 +57,7 @@ while True:
                         print(f"Sprzedałem {bought_eth}ETH za {usd}USD\t PROFIT: {usd - started_usd}USD", flush=True)
                         bought_eth = 0
                 elif bought_btc > 0:
-                    transaction = api.transaction('btc', bought_eth, 'usd')
+                    transaction = api.transaction('btc', bought_btc, 'usd')
                     if api.confirm_transaction(transaction).status_code == 200:
                         usd += round(float(transaction['entity']['boughtAmount']))
                         print(f"Sprzedałem {bought_btc}BTC za {usd}USD\t PROFIT: {usd - started_usd}USD", flush=True)

@@ -75,7 +75,11 @@ class API:
 
     def confirm_transaction(self, transaction_id):
         if not isinstance(transaction_id, str):
-            transaction_id = transaction_id['entity']['transactionID']
+            try:
+                transaction_id = transaction_id['entity']['transactionID']
+            except KeyError as e:
+                print(transaction_id)
+                raise e
         return self.session.post(
                 "https://platform.cryptobrawl.pl/api/transactions/{}".format(transaction_id),
                 verify=False
