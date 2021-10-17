@@ -23,48 +23,62 @@ while True:
         time.sleep(max(2, time_to_next_update.total_seconds()))
         rates = api.get_rates()
     print("Synchronizacja z patolą osiągnięta, zaczynam ojebywać IBM", flush=True)
+    iteration = 0
     while True:
-        # metoda Kamila
-        roundedDiffrenceETH = round(rates['entity'][3]["rate"], 6) * rates['entity'][1]["rate"]
-        roundedDiffrenceBTC = round(rates['entity'][2]["rate"], 6) * rates['entity'][0]["rate"]
-        if roundedDiffrenceETH > 1.0008:
-            print("start ETH trade because rate is:", roundedDiffrenceETH, flush=True)
-            transaction = api.transaction('usd', usd, 'eth')
-            if api.confirm_transaction(transaction).status_code == 200:
-                # ibm zwraca hajs jako string w json'ie, WTF!
-                bought_eth += float(transaction['entity']['boughtAmount'])
-                usd = 0
-        elif roundedDiffrenceBTC > 1.0008:
-            print("start ETH trade because rate is:", roundedDiffrenceBTC)
-            transaction = api.transaction('usd', usd, 'btc')
-            if api.confirm_transaction(transaction).status_code == 200:
-                # ibm zwraca hajs jako string w json'ie, WTF!
-                bought_btc += float(transaction['entity']['boughtAmount'])
-                usd = 0
-        # sleep do sprzedaży!
         try:
-            time.sleep(7 + random.randint(0, 10))
-        finally:
-            # Even if you press ctrl-c, try selling crypto
-            if bought_eth > 0:
-                transaction = api.transaction('eth', bought_eth, 'usd')
+            # metoda Kamila
+            print(iteration)
+            roundedDiffrenceETH = round(rates['entity'][3]["rate"], 6) * rates['entity'][1]["rate"]
+            roundedDiffrenceBTC = round(rates['entity'][2]["rate"], 6) * rates['entity'][0]["rate"]
+            if roundedDiffrenceETH > 1.0008:
+                print("start ETH trade because rate is:", roundedDiffrenceETH, flush=True)
+                transaction = api.transaction('usd', usd, 'eth')
                 if api.confirm_transaction(transaction).status_code == 200:
-                    usd += round(float(transaction['entity']['boughtAmount']))
-                    print(f"Sprzedałem {bought_eth}ETH za {usd}USD\t PROFIT: {usd - started_usd}USD", flush=True)
-                    bought_eth = 0
-            elif bought_btc > 0:
-                transaction = api.transaction('btc', bought_eth, 'usd')
+                    # ibm zwraca hajs jako string w json'ie, WTF!
+                    bought_eth += float(transaction['entity']['boughtAmount'])
+                    usd = 0
+            elif roundedDiffrenceBTC > 1.0008:
+                print("start ETH trade because rate is:", roundedDiffrenceBTC)
+                transaction = api.transaction('usd', usd, 'btc')
                 if api.confirm_transaction(transaction).status_code == 200:
-                    usd += round(float(transaction['entity']['boughtAmount']))
-                    print(f"Sprzedałem {bought_btc}BTC za {usd}USD\t PROFIT: {usd - started_usd}USD", flush=True)
-                    bought_btc = 0
-        # Jak zarobisz wystarczająco dużo do wypierdalaj
-        if (usd - started_usd) > (TARGET_PROFIT * started_usd):
-            break
-        # sleep do następnej transakcji
-        time_to_next_update = api.get_update_datetime(rates) - datetime.datetime.now()
-        time.sleep(max(2, time_to_next_update.total_seconds() + random.randint(0, 4)))
-        rates = api.get_rates()
+                    # ibm zwraca hajs jako string w json'ie, WTF!
+                    bought_btc += float(transaction['entity']['boughtAmount'])
+                    usd = 0
+            # sleep do sprzedaży!
+            try:
+                time.sleep(7 + random.randint(0, 10))
+            finally:
+                # Even if you press ctrl-c, try selling crypto
+                if bought_eth > 0:
+                    transaction = api.transaction('eth', bought_eth, 'usd')
+                    if api.confirm_transaction(transaction).status_code == 200:
+                        usd += round(float(transaction['entity']['boughtAmount']))
+                        print(f"Sprzedałem {bought_eth}ETH za {usd}USD\t PROFIT: {usd - started_usd}USD", flush=True)
+                        bought_eth = 0
+                elif bought_btc > 0:
+                    transaction = api.transaction('btc', bought_eth, 'usd')
+                    if api.confirm_transaction(transaction).status_code == 200:
+                        usd += round(float(transaction['entity']['boughtAmount']))
+                        print(f"Sprzedałem {bought_btc}BTC za {usd}USD\t PROFIT: {usd - started_usd}USD", flush=True)
+                        bought_btc = 0
+            # Jak zarobisz wystarczająco dużo do wypierdalaj
+            if (usd - started_usd) > (TARGET_PROFIT * started_usd):
+                break
+            # sleep do następnej transakcji
+            time_to_next_update = api.get_update_datetime(rates) - datetime.datetime.now()
+            time.sleep(max(2, time_to_next_update.total_seconds() + random.randint(0, 4)))
+            rates = api.get_rates()
+        except Exception as e:
+            print("EXCEPTION:", e)
+            time.sleep(120)
+            api.reconnect()
+            rates = api.get_rates()
+            time_to_next_update = api.get_update_datetime(rates) - datetime.datetime.now()
+            if time_to_next_update.total_seconds() < 30:
+                # skip first period if we are late
+                time.sleep(max(2, time_to_next_update.total_seconds()))
+                rates = api.get_rates()
+            print("Got back in action!", flush=True)
     print("Kończe trejdowanie", flush=True)
     time_to_sleep = datetime.timedelta(hours=random.randint(2, 4), minutes=random.randint(0, 59))
     time_to_wake_up = datetime.datetime.now() + time_to_sleep
