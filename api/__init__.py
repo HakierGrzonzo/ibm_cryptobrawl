@@ -52,7 +52,7 @@ class API:
         driver.close()
         with open(".cookie", "w+") as f:
             json.dump(cookie_json, f)
-        print("I'm in!")
+        print("I'm in!", flush=True)
 
     def get_rates(self):
         return self.session.get("https://platform.cryptobrawl.pl/api/rates", verify=False).json()
