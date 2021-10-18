@@ -32,16 +32,25 @@ while True:
         print(iteration, flush=True)
         iteration += 1
         try:
+            bitcoin, ethereum = get_price_data()
             bitcoin_ibm = rates['entity'][0]["rate"]
             ethereum_ibm = rates['entity'][1]['rate']
-            if bought_btc > 0 and bitcoin_ibm != bought_ratio_btc:
+            if (
+                    bought_btc > 0 and 
+                    abs(bitcoin_ibm - bought_ratio_btc) > 1 and
+                    abs(bitcoin_ibm - bitcoin['usd']) < 1
+                ):
                 transaction = api.transaction('btc', bought_btc, 'usd')
                 if api.confirm_transaction(transaction).status_code == 200:
                     print("Sold BTC")
                     bought_btc = 0
                     usd += float(transaction['entity']['boughtAmount'])
                     print("PROFIT:", usd - started_usd)
-            elif bought_eth > 0 and ethereum_ibm != bought_ratio_eth:
+            if (
+                    bought_eth > 0 and 
+                    abs(ethereum_ibm - bought_ratio_eth) > .5 and
+                    abs(ethereum_ibm - ethereum['usd']) < .5
+                ):
                 transaction = api.transaction('ETH', bought_eth, 'usd')
                 if api.confirm_transaction(transaction).status_code == 200:
                     print("Sold ETH")
@@ -49,29 +58,25 @@ while True:
                     usd += float(transaction['entity']['boughtAmount'])
                     print("PROFIT:", usd - started_usd)
             time_to_next_update = api.get_update_datetime(rates) - datetime.datetime.now()
-            time.sleep(max(1, time_to_next_update.total_seconds() - 15))
+            time.sleep(max(1, time_to_next_update.total_seconds() / 2))
+            # second half
             bitcoin, ethereum = get_price_data()
-            ibm_timestamp = rates['metadata']['expiresAt'] - 60
-            if bitcoin['last_updated_at'] > ibm_timestamp and usd > 0:
-                print("Got advantage in BTC")
-                if bitcoin['usd'] > bitcoin_ibm:
-                    # press advantage
-                    transaction = api.transaction('usd', usd, 'btc')
-                    if api.confirm_transaction(transaction).status_code == 200:
-                        print("Bought BTC")
-                        bought_btc += float(transaction['entity']['boughtAmount'])
-                        usd = 0
-                        bought_ratio_btc = bitcoin_ibm
-            if ethereum['last_updated_at'] > ibm_timestamp:
-                print("Got advantage in ETH")
-                if ethereum['usd'] > ethereum_ibm and usd > 0:
-                    # press advantage
-                    transaction = api.transaction('usd', usd, 'eth')
-                    if api.confirm_transaction(transaction).status_code == 200:
-                        print("Bought ETH")
-                        bought_eth += float(transaction['entity']['boughtAmount'])
-                        usd = 0
-                        bought_ratio_eth = ethereum_ibm
+            if bitcoin['usd'] - bitcoin_ibm > 1 and usd > 0:
+                # press advantage
+                transaction = api.transaction('usd', usd, 'btc')
+                if api.confirm_transaction(transaction).status_code == 200:
+                    print("Bought BTC")
+                    bought_btc += float(transaction['entity']['boughtAmount'])
+                    usd = 0
+                    bought_ratio_btc = bitcoin_ibm
+            if ethereum['usd'] - ethereum_ibm > .5 and usd > 0:
+                # press advantage
+                transaction = api.transaction('usd', usd, 'eth')
+                if api.confirm_transaction(transaction).status_code == 200:
+                    print("Bought ETH")
+                    bought_eth += float(transaction['entity']['boughtAmount'])
+                    usd = 0
+                    bought_ratio_eth = ethereum_ibm
             if (usd - started_usd) > (TARGET_PROFIT * started_usd):
                 break
             # sleep do następnej transakcji
