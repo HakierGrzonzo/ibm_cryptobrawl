@@ -3,6 +3,7 @@ import time
 import datetime
 import random
 from .notifications import send_finished, send_going_to_start
+from .coingecko import get_price_data
 
 TARGET_PROFIT = .1 # .1 - 10% profitu przy odpaleniu
 WARNING_TIME = 600 # ile sekund przed handlem mam wysłać przypomnienie
@@ -10,9 +11,12 @@ WARNING_TIME = 600 # ile sekund przed handlem mam wysłać przypomnienie
 while True:
     api = API("grzekop680@student.polsl.pl", "ju4wk7gTRFxFdtb")
     bought_eth = 0
+    bought_ratio_eth = 0
     bought_btc = 0
+    bought_ratio_btc = 0
     team = api.get_team()
-    usd = round(float(team['entity']['balance']['currencies']['usd']) * .8)
+    usd = round(float(team['entity']['balance']['currencies']['usd']) * .95)
+    #usd = 10000
     started_usd = usd
     print("Beggining trade with", usd, "USD!", flush=True)
     print("\tTarget is", usd * (TARGET_PROFIT + 1), "USD", flush=True)
@@ -25,44 +29,49 @@ while True:
     print("Synchronizacja z patolą osiągnięta, zaczynam ojebywać IBM", flush=True)
     iteration = 0
     while True:
+        print(iteration, flush=True)
+        iteration += 1
         try:
-            # metoda Kamila
-            print(iteration)
-            iteration += 1
-            roundedDiffrenceETH = round(rates['entity'][3]["rate"], 6) * rates['entity'][1]["rate"]
-            roundedDiffrenceBTC = round(rates['entity'][2]["rate"], 6) * rates['entity'][0]["rate"]
-            if roundedDiffrenceETH > 1.0008:
-                print("start ETH trade because rate is:", roundedDiffrenceETH, flush=True)
-                transaction = api.transaction('usd', usd, 'eth')
+            bitcoin_ibm = rates['entity'][0]["rate"]
+            ethereum_ibm = rates['entity'][1]['rate']
+            if bought_btc > 0 and bitcoin_ibm != bought_ratio_btc:
+                transaction = api.transaction('btc', bought_btc, 'usd')
                 if api.confirm_transaction(transaction).status_code == 200:
-                    # ibm zwraca hajs jako string w json'ie, WTF!
-                    bought_eth += float(transaction['entity']['boughtAmount'])
-                    usd = 0
-            elif roundedDiffrenceBTC > 1.0008:
-                print("start BTC trade because rate is:", roundedDiffrenceBTC)
-                transaction = api.transaction('usd', usd, 'btc')
+                    print("Sold BTC")
+                    bought_btc = 0
+                    usd += float(transaction['entity']['boughtAmount'])
+                    print("PROFIT:", usd - started_usd)
+            elif bought_eth > 0 and ethereum_ibm != bought_ratio_eth:
+                transaction = api.transaction('ETH', bought_eth, 'usd')
                 if api.confirm_transaction(transaction).status_code == 200:
-                    # ibm zwraca hajs jako string w json'ie, WTF!
-                    bought_btc += float(transaction['entity']['boughtAmount'])
-                    usd = 0
-            # sleep do sprzedaży!
-            try:
-                time.sleep(7 + random.randint(0, 10))
-            finally:
-                # Even if you press ctrl-c, try selling crypto
-                if bought_eth > 0:
-                    transaction = api.transaction('eth', bought_eth, 'usd')
+                    print("Sold ETH")
+                    bought_eth = 0
+                    usd += float(transaction['entity']['boughtAmount'])
+                    print("PROFIT:", usd - started_usd)
+            time_to_next_update = api.get_update_datetime(rates) - datetime.datetime.now()
+            time.sleep(max(1, time_to_next_update.total_seconds() - 15))
+            bitcoin, ethereum = get_price_data()
+            ibm_timestamp = rates['metadata']['expiresAt'] - 60
+            if bitcoin['last_updated_at'] > ibm_timestamp and usd > 0:
+                print("Got advantage in BTC")
+                if bitcoin['usd'] > bitcoin_ibm:
+                    # press advantage
+                    transaction = api.transaction('usd', usd, 'btc')
                     if api.confirm_transaction(transaction).status_code == 200:
-                        usd += round(float(transaction['entity']['boughtAmount']))
-                        print(f"Sprzedałem {bought_eth}ETH za {usd}USD\t PROFIT: {usd - started_usd}USD", flush=True)
-                        bought_eth = 0
-                elif bought_btc > 0:
-                    transaction = api.transaction('btc', bought_btc, 'usd')
+                        print("Bought BTC")
+                        bought_btc += float(transaction['entity']['boughtAmount'])
+                        usd = 0
+                        bought_ratio_btc = bitcoin_ibm
+            if ethereum['last_updated_at'] > ibm_timestamp:
+                print("Got advantage in ETH")
+                if ethereum['usd'] > ethereum_ibm and usd > 0:
+                    # press advantage
+                    transaction = api.transaction('usd', usd, 'eth')
                     if api.confirm_transaction(transaction).status_code == 200:
-                        usd += round(float(transaction['entity']['boughtAmount']))
-                        print(f"Sprzedałem {bought_btc}BTC za {usd}USD\t PROFIT: {usd - started_usd}USD", flush=True)
-                        bought_btc = 0
-            # Jak zarobisz wystarczająco dużo do wypierdalaj
+                        print("Bought ETH")
+                        bought_eth += float(transaction['entity']['boughtAmount'])
+                        usd = 0
+                        bought_ratio_eth = ethereum_ibm
             if (usd - started_usd) > (TARGET_PROFIT * started_usd):
                 break
             # sleep do następnej transakcji
@@ -88,7 +97,4 @@ while True:
     time.sleep(time_to_sleep.total_seconds() - WARNING_TIME)
     send_going_to_start(time_to_wake_up.isoformat(sep=" "))
     time.sleep(WARNING_TIME)
-
-
-
 
