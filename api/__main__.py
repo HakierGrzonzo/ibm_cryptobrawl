@@ -8,6 +8,8 @@ from .coingecko import get_price_data
 TARGET_PROFIT = .1 # .1 - 10% profitu przy odpaleniu
 WARNING_TIME = 600 # ile sekund przed handlem mam wysłać przypomnienie
 
+logfile = open("logfile.tsv", "w+")
+
 while True:
     api = API("grzekop680@student.polsl.pl", "ju4wk7gTRFxFdtb")
     bought_eth = 0
@@ -57,6 +59,19 @@ while True:
                     bought_eth = 0
                     usd += float(transaction['entity']['boughtAmount'])
                     print("PROFIT:", usd - started_usd)
+            print(
+                    iteration,
+                    bitcoin['usd'],
+                    ethereum['usd'],
+                    bitcoin_ibm,
+                    ethereum_ibm,
+                    usd,
+                    bought_btc,
+                    bought_eth,
+                    sep="\t",
+                    file=logfile,
+                    flush=True
+                )
             time_to_next_update = api.get_update_datetime(rates) - datetime.datetime.now()
             time.sleep(max(1, time_to_next_update.total_seconds() / 2))
             # second half
@@ -79,6 +94,19 @@ while True:
                     bought_ratio_eth = ethereum_ibm
             if (usd - started_usd) > (TARGET_PROFIT * started_usd):
                 break
+            print(
+                    iteration + .5,
+                    bitcoin['usd'],
+                    ethereum['usd'],
+                    bitcoin_ibm,
+                    ethereum_ibm,
+                    usd,
+                    bought_btc,
+                    bought_eth,
+                    sep="\t",
+                    file=logfile,
+                    flush=True
+                )
             # sleep do następnej transakcji
             time_to_next_update = api.get_update_datetime(rates) - datetime.datetime.now()
             time.sleep(max(2, time_to_next_update.total_seconds() + random.randint(0, 4)))
@@ -95,11 +123,7 @@ while True:
                 rates = api.get_rates()
             print("Got back in action!", flush=True)
     print("Kończe trejdowanie", flush=True)
-    time_to_sleep = datetime.timedelta(hours=random.randint(2, 4), minutes=random.randint(0, 59))
+    time_to_sleep = datetime.timedelta(minutes=random.randint(1, 19))
     time_to_wake_up = datetime.datetime.now() + time_to_sleep
-    print(f"Ide spać do {time_to_wake_up.isoformat()}", flush=True)
-    send_finished(str(round(usd - started_usd)), time_to_wake_up.isoformat(sep=' '))
-    time.sleep(time_to_sleep.total_seconds() - WARNING_TIME)
-    send_going_to_start(time_to_wake_up.isoformat(sep=" "))
-    time.sleep(WARNING_TIME)
+    time.sleep(time_to_sleep.total_seconds())
 
