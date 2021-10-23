@@ -24,7 +24,7 @@ while True:
     print("\tTarget is", usd * (TARGET_PROFIT + 1), "USD", flush=True)
     rates = api.get_rates()
     time_to_next_update = api.get_update_datetime(rates) - datetime.datetime.now()
-    if time_to_next_update.total_seconds() < 30:
+    if time_to_next_update.total_seconds() < 10:
         # skip first period if we are late
         time.sleep(max(2, time_to_next_update.total_seconds()))
         rates = api.get_rates()
@@ -73,7 +73,7 @@ while True:
                     flush=True
                 )
             time_to_next_update = api.get_update_datetime(rates) - datetime.datetime.now()
-            time.sleep(max(1, time_to_next_update.total_seconds() / 2))
+            time.sleep(max(1, time_to_next_update.total_seconds() * .35))
             # second half
             bitcoin, ethereum = get_price_data()
             if bitcoin['usd'] - bitcoin_ibm > 1 and usd > 0:
