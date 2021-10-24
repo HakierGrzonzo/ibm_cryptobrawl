@@ -3,3 +3,5 @@ services:
     build: 
       dockerfile: ./dockerfile
       context: .
+    volumes:
+      - "./logs/logfile.tsv:/logfile.tsv"
