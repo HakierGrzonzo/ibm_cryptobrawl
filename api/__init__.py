@@ -34,7 +34,7 @@ class API:
         """
         print("Reconnecting!")
         options = webdriver.FirefoxOptions()
-        options.headless = True
+        #options.headless = True
         driver = webdriver.Firefox(options=options)
         driver.get("https://platform.cryptobrawl.pl/ui/home")
         sleep(2)
