@@ -51,11 +51,7 @@ while True:
             ethereum_ibm = rates['entity'][1]['rate']
             if (
                     bought_btc > 0 and (
-                        (
-                            abs(bitcoin_ibm - bought_ratio_btc) > 1 and
-                            abs(bitcoin_ibm - bitcoin['usd']) < 1
-                        ) or
-                        bitcoin['usd'] < bought_ratio_btc
+                        bitcoin['usd'] < bitcoin_ibm
                     )
                 ):
                 transaction = api.transaction('btc', bought_btc, 'usd')
@@ -66,11 +62,7 @@ while True:
                     print("PROFIT:", usd - started_usd)
             if (
                     bought_eth > 0 and (
-                        (
-                            abs(ethereum_ibm - bought_ratio_eth) > .5 and
-                            abs(ethereum_ibm - ethereum['usd']) < .5
-                        ) or 
-                        ethereum['usd'] < bought_ratio_eth
+                        ethereum['usd'] < ethereum_ibm
                     )
                 ):
                 transaction = api.transaction('ETH', bought_eth, 'usd')
@@ -129,10 +121,11 @@ while True:
                 )
             # sleep do następnej transakcji
             time_to_next_update = api.get_update_datetime(rates) - datetime.datetime.now()
-            time.sleep(max(2, time_to_next_update.total_seconds() + random.randint(0, 4)))
+            time.sleep(max(2, time_to_next_update.total_seconds()))
             rates = api.get_rates()
         except Exception as e:
             print("EXCEPTION:", e)
+            raise e
             break
     print("Kończe trejdowanie", flush=True)
     time_to_sleep = datetime.timedelta(minutes=random.randint(1, 19))
