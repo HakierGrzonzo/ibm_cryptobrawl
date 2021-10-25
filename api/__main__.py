@@ -2,8 +2,7 @@ from api import API
 import time
 import datetime
 import random
-from .notifications import send_finished, send_going_to_start
-from .coingecko import get_price_data
+from api.coingecko import get_price_data
 
 TARGET_PROFIT = .1 # .1 - 10% profitu przy odpaleniu
 WARNING_TIME = 600 # ile sekund przed handlem mam wysłać przypomnienie
@@ -68,8 +67,8 @@ while True:
                     bought_eth > 0 and (
                         (
                             abs(ethereum_ibm - bought_ratio_eth) > .5 and
-                            abs(ethereum_ibm - ethereum['usd']) < .5
-                        ) or 
+                            abs(ethereum_ibm - ethereum['usd']) < 1
+                        ) or
                         ethereum['usd'] < bought_ratio_eth
                     )
                 ):
@@ -93,10 +92,10 @@ while True:
                     flush=True
                 )
             time_to_next_update = api.get_update_datetime(rates) - datetime.datetime.now()
-            time.sleep(max(1, time_to_next_update.total_seconds() * .35))
+            time.sleep(max(1, time_to_next_update.total_seconds() * .75))
             # second half
             bitcoin, ethereum = get_price_data()
-            if bitcoin['usd'] - bitcoin_ibm > 1 and usd > 0:
+            if bitcoin['usd'] - bitcoin_ibm > .02 and usd > 0 and (ethereum['usd'] - ethereum_ibm)/ethereum['usd'] < (bitcoin['usd'] - bitcoin_ibm)/bitcoin['usd']:
                 # press advantage
                 transaction = api.transaction('usd', usd, 'btc')
                 if api.confirm_transaction(transaction).status_code == 200:
@@ -104,7 +103,7 @@ while True:
                     bought_btc += float(transaction['entity']['boughtAmount'])
                     usd = 0
                     bought_ratio_btc = bitcoin_ibm
-            if ethereum['usd'] - ethereum_ibm > .5 and usd > 0:
+            if ethereum['usd'] - ethereum_ibm > .01 and usd > 0:
                 # press advantage
                 transaction = api.transaction('usd', usd, 'eth')
                 if api.confirm_transaction(transaction).status_code == 200:
@@ -129,7 +128,7 @@ while True:
                 )
             # sleep do następnej transakcji
             time_to_next_update = api.get_update_datetime(rates) - datetime.datetime.now()
-            time.sleep(max(2, time_to_next_update.total_seconds() + random.randint(0, 4)))
+            time.sleep(max(2, time_to_next_update.total_seconds()))
             rates = api.get_rates()
         except Exception as e:
             print("EXCEPTION:", e)
