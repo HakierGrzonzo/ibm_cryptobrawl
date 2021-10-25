@@ -135,7 +135,7 @@ while True:
             print("EXCEPTION:", e)
             break
     print("Kończe trejdowanie", flush=True)
-    time_to_sleep = datetime.timedelta(minutes=random.randint(1, 19))
+    time_to_sleep = datetime.timedelta(minutes=random.randint(1, 3))
     time_to_wake_up = datetime.datetime.now() + time_to_sleep
     time.sleep(time_to_sleep.total_seconds())
 
