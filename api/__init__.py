@@ -71,6 +71,7 @@ class API:
                     }
                 },
                 verify=False)
+        print(request.text)
         return request.json()
 
     def confirm_transaction(self, transaction_id):
@@ -80,11 +81,12 @@ class API:
             except KeyError as e:
                 print(transaction_id)
                 raise e
-        return self.session.post(
+        req = self.session.post(
                 "https://platform.cryptobrawl.pl/api/transactions/{}".format(transaction_id),
                 verify=False
             )
-
+        print(req.text)
+        return req
     def get_update_datetime(self, rates):
         return datetime.datetime.fromtimestamp(rates['metadata']['expiresAt'])
 

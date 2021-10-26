@@ -95,7 +95,11 @@ while True:
             time.sleep(max(1, time_to_next_update.total_seconds() * .75))
             # second half
             bitcoin, ethereum = get_price_data()
-            if bitcoin['usd'] - bitcoin_ibm > 7 and usd > 0 and (ethereum['usd'] - ethereum_ibm)/ethereum['usd'] < (bitcoin['usd'] - bitcoin_ibm)/bitcoin['usd']:
+            if (
+                    bitcoin['usd'] - bitcoin_ibm > 7 and 
+                    usd > 0 and
+                    (ethereum['usd'] - ethereum_ibm) / ethereum['usd'] < (bitcoin['usd'] - bitcoin_ibm) / bitcoin['usd']
+                    ):
                 # press advantage
                 transaction = api.transaction('usd', usd, 'btc')
                 if api.confirm_transaction(transaction).status_code == 200:
@@ -134,7 +138,7 @@ while True:
             print("EXCEPTION:", e)
             break
     print("Kończe trejdowanie", flush=True)
-    time_to_sleep = datetime.timedelta(minutes=random.randint(1, 3))
+    time_to_sleep = datetime.timedelta(seconds=random.randint(10, 30))
     time_to_wake_up = datetime.datetime.now() + time_to_sleep
     time.sleep(time_to_sleep.total_seconds())
 
