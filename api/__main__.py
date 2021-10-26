@@ -16,7 +16,7 @@ while True:
     bought_ratio_eth = 0
     bought_ratio_btc = 0
     team = api.get_team()
-    usd = round(float(team['entity']['balance']['currencies']['usd']) * .95)
+    usd = round(float(team['entity']['balance']['currencies']['usd']) * .99)
     bought_btc = float(team['entity']['balance']['currencies']['btc'])
     if bought_btc > 0:
         transaction = api.transaction('btc', bought_btc, 'usd')
