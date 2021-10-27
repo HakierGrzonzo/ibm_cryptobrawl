@@ -85,8 +85,11 @@ class API:
                 "https://platform.cryptobrawl.pl/api/transactions/{}".format(transaction_id),
                 verify=False
             )
-        print(req.text)
-        return req
+        try:
+            json_req = req.json()
+            return False
+        except:
+            return True
     def get_update_datetime(self, rates):
         return datetime.datetime.fromtimestamp(rates['metadata']['expiresAt'])
 
