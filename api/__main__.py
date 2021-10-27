@@ -19,14 +19,14 @@ while True:
     bought_btc = float(team['entity']['balance']['currencies']['btc'])
     if bought_btc > 0:
         transaction = api.transaction('btc', bought_btc, 'usd')
-        if api.confirm_transaction(transaction).status_code == 200:
+        if api.confirm_transaction(transaction):
             print("Sold BTC")
             bought_btc = 0
             usd += float(transaction['entity']['boughtAmount'])
     bought_eth = float(team['entity']['balance']['currencies']['eth'])
     if bought_eth > 0:
         transaction = api.transaction('eth', bought_eth, 'usd')
-        if api.confirm_transaction(transaction).status_code == 200:
+        if api.confirm_transaction(transaction):
             print("Sold ETH")
             bought_eth = 0
             usd += float(transaction['entity']['boughtAmount'])
@@ -58,7 +58,7 @@ while True:
                     )
                 ):
                 transaction = api.transaction('btc', bought_btc, 'usd')
-                if api.confirm_transaction(transaction).status_code == 200:
+                if api.confirm_transaction(transaction):
                     print("Sold BTC")
                     bought_btc = 0
                     usd += float(transaction['entity']['boughtAmount'])
@@ -73,7 +73,7 @@ while True:
                     )
                 ):
                 transaction = api.transaction('ETH', bought_eth, 'usd')
-                if api.confirm_transaction(transaction).status_code == 200:
+                if api.confirm_transaction(transaction):
                     print("Sold ETH")
                     bought_eth = 0
                     usd += float(transaction['entity']['boughtAmount'])
@@ -102,7 +102,7 @@ while True:
                     ):
                 # press advantage
                 transaction = api.transaction('usd', usd, 'btc')
-                if api.confirm_transaction(transaction).status_code == 200:
+                if api.confirm_transaction(transaction):
                     print("Bought BTC")
                     bought_btc += float(transaction['entity']['boughtAmount'])
                     usd = 0
@@ -110,7 +110,7 @@ while True:
             if ethereum['usd'] - ethereum_ibm > .01 and usd > 0:
                 # press advantage
                 transaction = api.transaction('usd', usd, 'eth')
-                if api.confirm_transaction(transaction).status_code == 200:
+                if api.confirm_transaction(transaction):
                     print("Bought ETH")
                     bought_eth += float(transaction['entity']['boughtAmount'])
                     usd = 0
