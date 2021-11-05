@@ -2,7 +2,7 @@
 
 > Powered by coingecko ← kazali tu dać to daje xD.
 
-Bot <marquee>Bank Busters</marquee>, który został stwożony na konkurs [CryptoBrawl](https://cryptobrawl.pl/) zorganizowanego przez firmę IBM.
+Bot <marquee>Bank Busters</marquee>, który został stworzony na konkurs [CryptoBrawl](https://cryptobrawl.pl/) zorganizowanego przez firmę IBM.
 
 Bot został napisany przez:
 - Grzegorz Koperwas
@@ -14,9 +14,9 @@ Bot tak profesjonalny że miał wykresy w czasie rzeczywistym:
 
 # Opis:
 
-Zostało stwożonych parę algorytmów do zarabiania, zwanych dalej planami:
-- Plan A - Wykożystywanie błędów w zaokrąglaniu
-- Plan B - Implementacja HFT, posiadał oprócz orginalnej wersji dwie inne odmiany:
+Zostało stworzonych parę algorytmów do zarabiania, zwanych dalej planami:
+- Plan A - Wykorzystywanie błędów w zaokrąglaniu
+- Plan B - Implementacja HFT, posiadał oprócz oryginalnej wersji dwie inne odmiany:
     - Plan B² - Wersja działająca od połowy rundy finałowej, zawierająca algorytm wybierający inteligentnie pomiędzy BTC oraz ETH.
     - Plan B³ - (niezaimplementowany) - proponowane dodanie możliwości zmiany inwestycji w locie, na tą która przyniesie większe zyski.
 - Plan C - Głęboka modyfikacja planu B, nigdy nie użyta poza testami
@@ -24,8 +24,8 @@ Zostało stwożonych parę algorytmów do zarabiania, zwanych dalej planami:
 - Plan Z - Ręczne handlowanie w oparciu o parę zasad.
 
 
-Jak by co, to za *tick* rozumie się czas między odświerzeniami kursu na platformie, początek ticku jest zaraz po odświerzeniu kursu, początek
-zaraz przed odświerzeniem.
+Jak by co, to za *tick* rozumie się czas między odświeżeniami kursu na platformie, początek ticku jest zaraz po odświeżeniu kursu, początek
+zaraz przed odświeżeniem.
 
 ## Plan A:
 
@@ -35,7 +35,7 @@ Algorytm analizował co tick błędy zaokrąglania liczb na platformie, dlatego 
 floatach. Jeżeli platforma zaokrąglała akurat w górę to program automatycznie kupował i natychmiast sprzedawał którąś z kryptowalut. 
 Czynił tak aż do osiągnięcia jakiegoś celu, potem szedł spać. (tacy sneaky byliśmy)
 
-Niestety jako iż jedna z drużyn odkryła ten sam błąd, ale robiła jakieś 300 tranzakcji na minutę, to platforma ,,Z przyczyn technicznych"
+Niestety jako iż jedna z drużyn odkryła ten sam błąd, ale robiła jakieś 300 transakcji na minutę, to platforma ,,Z przyczyn technicznych"
 została zamknięta, błąd naprawiony i start konkursu opóźniony o 12 godzin.
 
 ## Plan B:
@@ -47,11 +47,11 @@ Algorytm składał się z dwóch części:
 - Część sprzedająca, uruchamiana na początku ticku.
 - Część kupująca uruchamiana na końcu ticku.
 
-Głównym celem algorytmu była próba *wyprzedzenia* kursu na platformie, gdzie kożystając z innego źródła dannych niż te zapewnione przez organizatora,
+Głównym celem algorytmu była próba *wyprzedzenia* kursu na platformie, gdzie korzystając z innego źródła danych niż te zapewnione przez organizatora,
 próbował przewidywać kurs na platformie. Takie upośledzone HFT, tylko zamiast ryć tunel pod światłowód krótszy o 5m by zarabiać 20zł na zmianie kursu 
 sajgonek między różnymi giełdami, nasz skrypt robił to podczas ticku, czyli miał jakieś 15 lub 60 sekund na swoje zagrania.
 
-Źródłem dannych było darmowe API coingecko, kurs z pewnego powodu **bardzo** przypominał ten z platformy (sus).
+Źródłem danych było darmowe API coingecko, kurs z pewnego powodu **bardzo** przypominał ten z platformy (sus).
 
 ### Kupowanie:
 
@@ -67,7 +67,7 @@ Tak, to były jakieś 4 ify.
 
 Implementacja na branchu `plan_c`.
 
-Algorytm kożystał z API Coinbase.com zamiast coingecko, miało ono inny kurs, ale wyższą częstotliwość odświerzania dannych. Z tego powodu
+Algorytm korzystał z API Coinbase.com zamiast coingecko, miało ono inny kurs, ale wyższą częstotliwość odświeżania danych. Z tego powodu
 nie zarabiał on na każdej małej górce, ale na dużych dołkach i robił on inwestycje bardziej długoterminowe.
 
 
